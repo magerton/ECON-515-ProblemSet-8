@@ -1,0 +1,111 @@
+\documentclass[a4paper,12pt]{article}
+\pagestyle{plain}
+
+%style
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{setspace}    %\onehalfspace %\doublespace etc
+\usepackage{fancyhdr}  % use this package to get a 2 line header
+%\usepackage{times}          %times new roman
+%\newsectionwidth{0pt}  % So the text is not indented under section headings
+
+
+
+
+% Graphics and objects
+\usepackage[pdftex]{color,graphicx}
+\usepackage{pdfpages} %\includepdf[pages={-}]{myfile.pdf}
+
+% Extra
+%\usepackage{natbib}         %biblio
+%\bibpunct{(}{)}{;}{a}{,}{,}   %biblio options
+
+
+\usepackage{dsfont}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\PR}{\mathrm{Pr}}
+\newcommand{\med}{\mathrm{med}}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\e}{\varepsilon}
+
+
+
+% Fancyhdr settings
+\renewcommand{\headrulewidth}{0pt} % suppress line drawn by default by fancyhdr
+\setlength{\headheight}{27.05003pt} % allow room for 2-line header
+\setlength{\headsep}{24pt}  % space between header and text
+\pagestyle{fancy}     % set pagestyle for document
+\rhead{ {\it N. Frazier}\\{\it pg. \thepage} } % put text in header (right side)
+\cfoot{}                                     % the foot is empty
+\topmargin=-0.5in % start text higher on the page
+
+% If you want a title page, ALT: see below
+%\title{title\\ Here}
+%\author{Nicholas Frazier}
+
+\begin{document}
+\vspace{-1cm}
+{\large \noindent Notes \\    %%%%%%%
+\normalsize N. Frazier \vspace{0cm} \\         %%%%%%%%%%%%%
+\normalsize Rice University \vspace{.1cm} \\
+\today
+}
+\thispagestyle{empty} % this page has no header  
+\singlespace
+%\vspace{-.8cm}
+\normalsize
+\hspace{.10in}
+
+
+
+
+
+Data Generation
+The individual's wage in the last period is given by 
+        $$ln(w_{i,A}) = f_1 + f_2(x_{i,A}) + e_{i,A}.$$
+Note, this does not include measurement error. For each individual the observed wage is
+        $$ln(w_{i,A}) = f_1 + f_2(x_{i,A}) + e_{i,A}+v_{i,A}.$$
+Calculation of Terminal Period Values
+If it the final period of an individual's life, for a given wage $w_{i,A}$ and experience level $x_{i,a}$, the individual's value function is 
+    $$V(w_{i,A},v_{i,A}) = max\{\gamma_1 + (1+\gamma_2)y_i,w_{i,A}+y_i\}.$$
+Consequently, the individual chooses to work if $w_{i,A}+y_i \geq \gamma_1 + (1+\gamma_2)y_i$.
+
+Calculation of Non-terminal Period Values
+If it is not the final period of an individual's life, their value function when choosing not to work is
+    $$V_a^0(x_{i,a}) = \gamma_1 + (1+\gamma_2)y_i + \left(\frac{1}{1+\delta}\right)V_{a+1}(x_{i,a}),$$
+and their value function when choosing to work is 
+    $$V_a^1(x_{i,a}) = w_{i,a}(x_{i,a}) + y_i + \left(\frac{1}{1+\delta}\right)V_{a+1}(x_{i,a}+1).$$
+Thus, their value function at time $a$ with experience $x_{i,a}$ is 
+    $$V_a(x_{i,a}) = max\{V_a^0(x_{i,a}), V_a^1(x_{i,a})\},$$
+and the individual chooses to work if $V_a^1(x_{i,a}) > V_a^0(x_{i,a})$.
+
+\section*{Summary Stats}
+
+\begin{itemize}
+	\item Individual lives for A periods
+	\item
+	\item 
+	\item
+	\item 
+	\item
+	\item 
+	\item
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

@@ -1,0 +1,7 @@
+*.zip
+writeup/*
+*sublime-workspace
+*sublime-project
+.DS_Store
+!**.tex
+!**.pdf
