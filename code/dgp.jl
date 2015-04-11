@@ -7,6 +7,7 @@ using DataFrames
 using Optim
 using Distributions
 using PyPlot
+using KernelDensity
 pwd()
 
 include("code/functions.jl")
@@ -15,21 +16,24 @@ include("code/functions_probit.jl")
 ###########################
 # Specify Model Parameters
 ###########################
-A    = 4          # Number of Periods
-γ_1  = 2.0        # Leisure Coefficient
-γ_2  = 1.0        # Consumption-Leisure Interaction Coefficient
+A    = 7         # Number of Periods
+γ_1  = 1.00        # Leisure Coefficient
+γ_2  = 0.50        # Consumption-Leisure Interaction Coefficient
 δ    = 0.1        # Discount Rate
-N    = 4          # Number of Individuals
-σ_e  = 10         # Standard Error of Wage Shock
-σ_v  = 1000       # Standard Error of Measurement Error
-α_1  = 1          # Wage Function Parameter
-α_2  = 5         # Wage Function Parameter
-μ_y  = 0          # Mean of non-labor income
-σ_y  = 1          # std dev of non-labor income
+N    = 20000          # Number of Individuals
+σ_e  = 1.0        # Standard Error of Wage Shock
+σ_v  = 0.1       # Standard Error of Measurement Error
+α_1  = 0.5          # Wage Function Parameter
+α_2  = 1.0         # Wage Function Parameter
+α_3  = -0.2         # wage function parameter
+μ_y  = 0.0          # Mean of non-labor income
+σ_y  = 2.0          # std dev of non-labor income
 # yL = 0          # Minimum Non-Labor Income
-# yH = 3          # Top Non-Labor Income
+# yH = 1000          # Top Non-Labor Income
 
-srand(12345)
+θ_real = [γ_1; γ_2; α_1; α_2; α_3; σ_e]
+
+# srand(12345)
 
 β = 1/(1+δ)
 
@@ -38,12 +42,13 @@ srand(12345)
 ################
 
 Y_nl = exp(rand(Normal(μ_y,σ_y^2),N))
+# Y_nl = rand(Uniform(yL,yH),N)
 df = DataFrame(
     ID = squeeze(kron([1:N],int(ones(A,1))),2), # ID
     A  = repmat([1:A],N),                       # Indicate Period
     Y  = squeeze(kron(Y_nl,ones(A,1)),2),       # Non-Labor Income
-    e  = rand(Normal(0,σ_e),N*A),               # Wage Shock
-    v  = rand(Normal(0,σ_v),N*A)                # Measurement Error
+    e  = rand(Normal(0,σ_e^2),N*A),               # Wage Shock
+    v  = rand(Normal(0,σ_v^2),N*A)                # Measurement Error
     )
 head(df)
 
@@ -62,10 +67,8 @@ end
 head(df)
 
 # fill in values
-
-tt = A
-x = 1
-
+tt = 3
+x = 0
 for tt in A:-1:1
     for x in 0:tt
         println("$tt and $x")
@@ -83,6 +86,7 @@ for tt in A:-1:1
         # generated before
         EV_a1_x    = symbol("EV_$(tt+1)_x$(x)") # of being at a+1 with x (didn't work)
         EV_a1_x1   = symbol("EV_$(tt+1)_x$(x+1)") # being at a+1 with x+1 (did work)
+
         # generated here
         V_a_x      = symbol("V_$(tt)_x$(x)") # being at a with x
         EV_a_x     = symbol("EV_$(tt)_x$(x)") # exp of being at a with x
@@ -96,14 +100,15 @@ for tt in A:-1:1
 
         # Add Wages to Dataset
         # True Wage
-        df[w_a_x][df[:A].==tt] = wage_eqn(X_a,(df[:e])[df[:A].==tt])          
+        df[w_a_x][df[:A].==tt] = 
+            wage_eqn(θ_real, X_a,(df[:e])[df[:A].==tt])          
 
 
 # take out of Dataframe
         # value of not working
-        df[V_a_x_no][df[:A].==tt] = leisure_value_t(tt) + (df[EV_a1_x])[df[:A].==tt]
+        df[V_a_x_no][df[:A].==tt] = leisure_value_t(θ_real, tt) + (df[EV_a1_x])[df[:A].==tt]
         # value of working       
-        df[V_a_x_yes][df[:A].==tt] = y + wage_eqn(X_a,E_a) + df[EV_a1_x1][df[:A].==tt]
+        df[V_a_x_yes][df[:A].==tt] = y + wage_eqn(θ_real, X_a,E_a) + df[EV_a1_x1][df[:A].==tt]
 
         # Choose between and record
         df[p_a_x][df[:A].==tt] = df[V_a_x_no][df[:A].==tt] .< df[V_a_x_yes][df[:A].==tt]
@@ -113,12 +118,13 @@ for tt in A:-1:1
         # calculate expected value of being at current period
         # Correct expectations for selection
         # Weight values by probability of occurence (cond'l on e_{ia})
-        Π = Π_true(X_a,tt)
+        Π = Π_work(θ_real, X_a,tt)
         (df[EV_a_x])[df[:A].==tt] = 
-            (1-Π).*( leisure_value_t(tt) + β*EV_0 )
-            + Π.*( y + β*EV_1 )
-            + exp(.5*σ_e^2)*wage_eqn(X_a, zeros(N)).*
-            ( 1 - normcdf( (g(X_a,tt) - σ_e^2)/σ_e ) )    
+            (1-Π).*( leisure_value_t(θ_real, tt) 
+            + β*df[EV_a1_x][df[:A].==tt] )
+            + Π.*( y + β*df[EV_a1_x1][df[:A].==tt] )
+            + exp(.5*σ_e^2)*wage_eqn(θ_real,X_a, zeros(N)).*
+            ( 1 - normcdf( (g(θ_real,X_a,tt) - σ_e^2)/σ_e ) )    
     end
 end
 head(df)
@@ -146,7 +152,7 @@ for jj in 1:A
 
     X_vec = convert(Array{Float64},(DATA[X_a])[df[:A].== jj])
     for x in 0:jj
-        println("$jj,$x")
+        # println("$jj,$x")
         tP_a = (df[symbol("p_$(jj)_x$(x)")][ df[:A].==jj ])
         tP = DATA[P_a][df[:A].== jj]
         tP[x.==X_vec] = tP_a[x.==X_vec]
@@ -167,24 +173,106 @@ end
 DATA
 
 
+# percentage that work in period A
+perc_a = zeros(A)
+for a in 1:A
+    perc_a[a] = sum( DATA[symbol("P_$(a)")][DATA[:A].== a ]  )/N
+end
+perc_a
+
 ##################################
 ######## Estimation
 ##################################
 
-# want to find 
+# # map g function
+# AAA = 1
+# k = kde(probit_input(θ_real))
+
+# fig2 = figure
+# fig2 = plot(k)
+
+# fig2 = title("Kernel density of \$g\$")
+# savefig("./plots/KdenX.jpg")
 
 
-global count = 1
 
 
-initials = ones(6)
 
-aa = 1
+
+
+
+
+
+
+
+θ = θ_real
+
+
+ntheta = length(θ)
+initials = ones(ntheta)
+# initials = θ_real
+
+
+AAA = A
 probit_opt = []
+global count = 1
 for i =1:5
   probit_opt = optimize(probit_wrapper,vec(initials),autodiff = true,
-      ftol=1e-12)
-  initials = probit_opt.minimum
+      ftol=1e-12,
+      iterations = 2000)
+  initials = probit_opt.minimum + randn(ntheta)
 end
-probit_opt
-θ = probit_opt.minimum
+show(probit_opt)
+println("\n")
+println("$(probit_opt.minimum)")
+println("\n")
+println("$θ_real \n")
+
+println("$perc_a")
+# θ = probit_opt.minimum
+# θ_star = [ 2.0  1.0 1.0  5.0  10.0 ]
+
+# show([θ'; θ_star])
+
+θ_hat = probit_opt.minimum
+
+W_a = DATA[symbol("W_$(tt)")][DATA[:A].==tt]
+X_a = DATA[symbol("X_$(tt)")][DATA[:A].==tt]
+
+function λ(t)
+    normpdf( probit_input(t) )./(1-normcdf(t))
+end
+
+end
+Y_mat = ln(W_a) 
+X_mat = [ones(N) X_a X_a.^2 λ(θ_hat)]
+
+(α_w_ols, Σ_w, Σ_α) = least_sq(X_mat,Y_mat)
+
+
+
+
+
+
+
+function EV_hat(X_a,Y_a)
+
+    p_vec = unpackparams(θ)
+    γ_1 = p_vec["γ_1"]
+    γ_2 = p_vec["γ_2"]
+    α_1 = p_vec["α_1"]
+    α_2 = p_vec["α_2"]
+    α_3 = p_vec["α_3"]
+    σ_e = p_vec["σ_e"]
+
+    Π = Π_work(θ_hat, X_a,tt)   
+    (df[EV_a_x])[df[:A].==tt] = 
+        (1-Π).*( leisure_value_t(θ_hat,tt) 
+        + β*df[EV_a1_x][df[:A].==tt] )
+        + Π.*( y + β*df[EV_a1_x1][df[:A].==tt] )
+        + exp(.5*σ_e^2)*wage_eqn(θ_hat,X_a, zeros(N)).*
+        ( 1 - normcdf( (g(θ_hat,X_a,tt) - σ_e^2)/σ_e ) )    
+
+
+
+end

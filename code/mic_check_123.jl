@@ -7,17 +7,8 @@ using NLopt
 using Optim
 
 
-initials = ones(numparams)
 
 
-probit_opt = []
-for i =1:5
-  probit_opt = optimize(ML_PROBIT,vec(initials),autodiff = true,
-      ftol=1e-12)
-  initials = probit_opt.minimum
-end
-probit_opt
-θ = probit_opt.minimum
 
   probit_opt = optimize(ENDOG_PROBIT,g!,vec(initials),
     method = :cg,ftol = 1e-20,grtol = 1e-12)
@@ -39,6 +30,7 @@ function fun_val(θ)
 		value = squeeze(ones(N,1).*NaN,2)
 	end
 end
+
 
 
 function ML_PROBIT(θ::Vector)
