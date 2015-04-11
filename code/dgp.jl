@@ -9,30 +9,34 @@ using Distributions
 using PyPlot
 pwd()
 
+include("code/functions.jl")
+
 ###########################
 # Specify Model Parameters
 ###########################
-A   = 3          # Number of Periods
-γ_1 = 0.0        # Leisure Coefficient
-γ_2 = 1.0        # Consumption-Leisure Interaction Coefficient
-δ   = 0.1        # Discount Rate
-N   = 4          # Number of Individuals
-σ_e = 3          # Standard Error of Wage Shock
-σ_v = 0.3        # Standard Error of Measurement Error
-f1  = 1          # Wage Function Parameter
-f2  = .5         # Wage Function Parameter
-μ_y = 0          # Mean of non-labor income
-σ_y = 2          # std dev of non-labor income
-# yL  = 0          # Minimum Non-Labor Income
-# yH  = 3          # Top Non-Labor Income
+A    = 3          # Number of Periods
+γ_1  = 2.0        # Leisure Coefficient
+γ_2  = 1.0        # Consumption-Leisure Interaction Coefficient
+δ    = 0.1        # Discount Rate
+N    = 4          # Number of Individuals
+σ_e  = 10         # Standard Error of Wage Shock
+σ_v  = 0.3        # Standard Error of Measurement Error
+α_1  = 1          # Wage Function Parameter
+α_2  = 5         # Wage Function Parameter
+μ_y  = 0          # Mean of non-labor income
+σ_y  = 1          # std dev of non-labor income
+# yL = 0          # Minimum Non-Labor Income
+# yH = 3          # Top Non-Labor Income
 
 srand(12345)
+
+β = 1/(1+δ)
 
 ################
 # Start Dataset
 ################
 
-Y_nl = e.^(rand(Normal(μ_y,σ_y^2),N))
+Y_nl = exp(rand(Normal(μ_y,σ_y^2),N))
 df = DataFrame(
     ID = squeeze(kron([1:N],int(ones(A,1))),2), # ID
     A  = repmat([1:A],N),                       # Indicate Period
@@ -40,78 +44,101 @@ df = DataFrame(
     e  = rand(Normal(0,σ_e),N*A),               # Wage Shock
     v  = rand(Normal(0,σ_v),N*A)                # Measurement Error
     )
-# head(df)
+head(df)
 
-
-df = DataFrame(
-    ID = AAA[:,1],
-    A  = AAA[:,2],
-    Y  = AAA[:,6],
-    e  = AAA[:,3],
-    v  = AAA[:,4]
-    )
-
-for tt in 1:A+1
-    for x in 0:A+1
+# generate empty value function
+# pre-allocation makes code cleaner later
+for tt in A+1:-1:1
+    for x in 0:tt
         df[symbol("EV_$(tt)_x$(x)")] = 0.0   # what are the $$'s? can i get some? is that a different pkg?
         df[symbol("V_$(tt)_x$(x)")]  = 0.0
+        df[symbol("w_$(tt)_x$(x)")]  = 0.0
+        df[symbol("V_$(tt)_x$(x)_no")] = 0.0
+        df[symbol("V_$(tt)_x$(x)_yes")] = 0.0
+        df[symbol("p$(tt)_x$(x)")]      = 0.0
     end
 end
 head(df)
 
+# fill in values
+
+tt = A
+x = 1
 
 for tt in A:-1:1
     for x in 0:tt
         println("$tt and $x")
 
+        # Convenience
+        X_a = int(x.*ones(N)) # give everyone X = x at a
+        E_a = (df[:e])[df[:A].==tt] # errors this period
+        y = df[:Y][df[:A].== tt] # N-vec of non-labor income at a
 
-        p_a_x      = symbol("p$(tt)_x$(x)")
-        V_a_x_no   = symbol("V_$(tt)_x$(x)_no")
-        V_a_x_yes  = symbol("V_$(tt)_x$(x)_yes")
-        V_a_x      = symbol("V_$(tt)_x$(x)")
-        EV_a_x     = symbol("EV_$(tt)_x$(x)")
-        EV_a1_x    = symbol("EV_$(tt+1)_x$(x)")
-        EV_a1_x1   = symbol("EV_$(tt+1)_x$(x+1)")
+        ##### WAGES
+        w_a_x  = symbol("w_$(tt)_x$(x)") # wage[ A= a, X = x] 
+        w_a    = symbol("w_$(tt)") # observed wage at a    
 
-        w_x  = symbol("w_x$(x)")
-        Ew_x = symbol("Ew_x$(x)")
+        #####  VALUES
+        # generated before
+        EV_a1_x    = symbol("EV_$(tt+1)_x$(x)") # of being at a+1 with x (didn't work)
+        EV_a1_x1   = symbol("EV_$(tt+1)_x$(x+1)") # being at a+1 with x+1 (did work)
+        # generated here
+        V_a_x      = symbol("V_$(tt)_x$(x)") # being at a with x
+        EV_a_x     = symbol("EV_$(tt)_x$(x)") # exp of being at a with x
+        V_a_x_no   = symbol("V_$(tt)_x$(x)_no") # of working this period
+        V_a_x_yes  = symbol("V_$(tt)_x$(x)_yes") # not working this period
+
+        ##### POLICY FUNCITON
+        p_a_x      = symbol("p$(tt)_x$(x)") # actual policy function
+        P_a        = symbol("P_$(tt)") # observed decision
+        
 
 
         # Add Wages to Dataset
-        df[w_x] = exp(f1+f2*x+df[:e])          # True Wage
+        # True Wage
+        df[w_a_x][df[:A].==tt] = wage_eqn(X_a,(df[:e])[df[:A].==tt])          
 
-        # ##################################################
-        # Don't we need to correct for selection???
-        # ##################################################
-        df[Ew_x] = exp(f1+f2*x)                # Expected True Wage
-           
-        df[V_a_x_no] = γ_1+(1+γ_2).*df[:Y] + df[EV_a1_x]
-        df[V_a_x_yes] = df[w_x]+df[:Y] + df[EV_a1_x1]
-        
-        #######################################################
-        # Need to use selection corrected wages here. 
-        # also weight by probability of working/not working.
-        # Right now, agents aren't rational.
-        #######################################################
-        df[EV_a_x] = df[Ew_x]+df[:Y] + df[EV_a1_x1]      
-        
+        # value of not working
+        df[V_a_x_no][df[:A].==tt] = leisure_value_t(tt) + (df[EV_a1_x])[df[:A].==tt]
+        # value of working       
+        df[V_a_x_yes][df[:A].==tt] = y + wage_eqn(X_a,E_a) + df[EV_a1_x1][df[:A].==tt]
 
-        df[p_a_x] = df[V_a_x_no] .< df[V_a_x_yes]
-
+        # Choose between and record
+        df[p_a_x][df[:A].==tt] = df[V_a_x_no][df[:A].==tt] .< df[V_a_x_yes][df[:A].==tt]
         (df[V_a_x])[df[p_a_x].==false] = (df[V_a_x_no])[df[p_a_x].==false]
         (df[V_a_x])[df[p_a_x].==true] = (df[V_a_x_yes])[df[p_a_x].==true]
 
-        # df[symbol("EV_$(tt)_x$(x)")] = max(df[symbol("V_$(tt)_x$(x)_no")],df[symbol("EV_$(tt)_x$(x)_yes")])
-
+        # calculate expected value of being at current period
+        # Correct expectations for selection
+        # Weight values by probability of occurence (cond'l on e_{ia})
+        Π = Π_true(int(x.*ones(N)),tt)
+        (df[EV_a_x])[df[:A].==tt] = 
+            y + (1-Π).*( leisure_value_t(tt) + EV_0 )
+            + Π.*( EV_1 )
+            + exp(.5*σ_e^2)*wage_eqn(X_a, zeros(N)).*
+            ( 1 - normcdf( (g(X_a,tt) - σ_e^2)/σ_e ) )
         
-        # observed wage
-        df[symbol("ow_x$(x)")] = exp(f1+f2*x+df[:e]+df[:v])  # Wage with Measurement Error
-
-        # delete!(df,V_a_x_no)
-        # delete!(df,V_a_x_yes)
-        # delete!(df,EV_a_x)
     end
 end
+
+
+
+
+
+
+
+
+# reco er path and record data
+
+        # # observed wage
+        # (df[symbol("ow_x$(x)")])[df[:A].==tt]
+        #      = obs_wage_eqn(X_a,(df[:e])[df[:A].==tt]),(df[:v])[df[:A].==tt])  # Wage with Measurement Error
+        # # delete!(df,V_a_x_no)
+        # # delete!(df,V_a_x_yes)
+        # # delete!(df,EV_a_x)
+
+
+
 
 #  get rid of Value of A+1 since always 0.0
 
@@ -120,8 +147,12 @@ for x in 0:A
     delete!(df,symbol("V_$(A+1)_x$(x)"))
 end
 
-
 head(df)
+
+
+
+
+e = (df[:e])[df[:A] .== a]
 
 
 
