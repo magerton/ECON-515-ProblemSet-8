@@ -55,7 +55,7 @@ for tt in A+1:-1:1
         df[symbol("w_$(tt)_x$(x)")]  = 0.0
         df[symbol("V_$(tt)_x$(x)_no")] = 0.0
         df[symbol("V_$(tt)_x$(x)_yes")] = 0.0
-        df[symbol("p$(tt)_x$(x)")]      = 0.0
+        df[symbol("p_$(tt)_x$(x)")]      = 0.0
     end
 end
 head(df)
@@ -89,8 +89,7 @@ for tt in A:-1:1
         V_a_x_yes  = symbol("V_$(tt)_x$(x)_yes") # not working this period
 
         ##### POLICY FUNCITON
-        p_a_x      = symbol("p$(tt)_x$(x)") # actual policy function
-        P_a        = symbol("P_$(tt)") # observed decision
+        p_a_x      = symbol("p_$(tt)_x$(x)") # actual policy function
         
 
 
@@ -98,6 +97,8 @@ for tt in A:-1:1
         # True Wage
         df[w_a_x][df[:A].==tt] = wage_eqn(X_a,(df[:e])[df[:A].==tt])          
 
+
+# take out of Dataframe
         # value of not working
         df[V_a_x_no][df[:A].==tt] = leisure_value_t(tt) + (df[EV_a1_x])[df[:A].==tt]
         # value of working       
@@ -111,21 +112,57 @@ for tt in A:-1:1
         # calculate expected value of being at current period
         # Correct expectations for selection
         # Weight values by probability of occurence (cond'l on e_{ia})
-        Π = Π_true(int(x.*ones(N)),tt)
+        Π = Π_true(X_a,tt)
         (df[EV_a_x])[df[:A].==tt] = 
             y + (1-Π).*( leisure_value_t(tt) + EV_0 )
             + Π.*( EV_1 )
             + exp(.5*σ_e^2)*wage_eqn(X_a, zeros(N)).*
-            ( 1 - normcdf( (g(X_a,tt) - σ_e^2)/σ_e ) )
-        
+            ( 1 - normcdf( (g(X_a,tt) - σ_e^2)/σ_e ) )    
     end
 end
+head(df)
 
 
+DATA = DataFrame(
+    ID = squeeze(kron([1:N],int(ones(A,1))),2), # ID
+    A  = repmat([1:A],N),                       # Indicate Period
+    Y  = squeeze(kron(Y_nl,ones(A,1)),2),       # Non-Labor Income
+    )
+# generate empty observed data set
+for tt in 1:A
+    DATA[symbol("P_$(tt)")] = 0.0   # do they work in period a
+    DATA[symbol("W_$(tt)")] = NaN # wage in period a
+    DATA[symbol("X_$(tt)")] = 0.0  # experience in period a
+end
+head(DATA)
 
+for jj in 1:A
+    
+    P_a = symbol("P_$(jj)") # observed decision
+    W_a = symbol("W_$(jj)")
+    X_a = symbol("X_$(jj)")
+    X_a1 = symbol("X_$(jj+1)")
 
+    X_vec = convert(Array{Float64},(DATA[X_a])[df[:A].== jj])
+    for x in 0:jj
+        println("$jj,$x")
+        tP_a = (df[symbol("p_$(jj)_x$(x)")][ df[:A].==jj ])
+        tP = DATA[P_a][df[:A].== jj]
+        tP[x.==X_vec] = tP_a[x.==X_vec]
+        DATA[P_a][df[:A].== jj] = tP
 
+        WORKED = DATA[P_a][df[:A].== jj]
+        tW_a = (df[symbol("w_$(jj)_x$(x)")][ df[:A].==jj ])
+        tW = DATA[W_a][df[:A].== jj]
+        tW[WORKED.==true] = tW_a[WORKED.==true]
+        DATA[W_a][df[:A].== jj] = tW
+    end 
 
+    if jj < A
+        (DATA[X_a1])[df[:A].== jj+1] = X_vec + (DATA[P_a][df[:A].== jj])
+    end
+end
+DATA
 
 
 # reco er path and record data
