@@ -53,7 +53,7 @@ df = DataFrame(
 
 for tt in 1:A+1
     for x in 0:A+1
-        df[symbol("EV_$(tt)_x$(x)")] = 0.0
+        df[symbol("EV_$(tt)_x$(x)")] = 0.0   # what are the $$'s? can i get some? is that a different pkg?
         df[symbol("V_$(tt)_x$(x)")]  = 0.0
     end
 end
@@ -79,11 +79,21 @@ for tt in A:-1:1
 
         # Add Wages to Dataset
         df[w_x] = exp(f1+f2*x+df[:e])          # True Wage
+
+        # ##################################################
+        # Don't we need to correct for selection???
+        # ##################################################
         df[Ew_x] = exp(f1+f2*x)                # Expected True Wage
            
         df[V_a_x_no] = γ_1+(1+γ_2).*df[:Y] + df[EV_a1_x]
         df[V_a_x_yes] = df[w_x]+df[:Y] + df[EV_a1_x1]
-        df[EV_a_x] = df[Ew_x]+df[:Y] + df[EV_a1_x1]
+        
+        #######################################################
+        # Need to use selection corrected wages here. 
+        # also weight by probability of working/not working.
+        # Right now, agents aren't rational.
+        #######################################################
+        df[EV_a_x] = df[Ew_x]+df[:Y] + df[EV_a1_x1]      
         
 
         df[p_a_x] = df[V_a_x_no] .< df[V_a_x_yes]
