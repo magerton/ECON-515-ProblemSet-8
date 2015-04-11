@@ -1,17 +1,9 @@
 
-
-
-## Normal PDF
-function normpdf(x::Union(Vector{Float64}, Float64, DataArray) ;mean=0,var=1) # a type-union should work here and keep code cleaner
-    out = Distributions.pdf(Distributions.Normal(mean,var), x) 
-    out + (out .== 0.0)*eps(1.0) - (out .== 1.0)*eps(1.0) 
-end
-
-## Normal CDF
-function normcdf(x::Union(Vector{Float64}, Float64, DataArray);mean=0,var=1) 
-    out = Distributions.cdf(Distributions.Normal(mean,var), x)
-    out + (out .== 0.0)*eps(1.0) - (out .== 1.0)*eps(1.0) 
-end
+# TODO
+# we could make small functions accept θ
+# then we could use leisure_value_t, etc accept
+# θ_true in DGP and θ_guess in estimation
+# right now can't small functions for estimation
 
 function leisure_value_t(a::Int64)
 	γ_1 + (1 + γ_2).*(df[:Y])[df[:A] .== a] 
@@ -59,4 +51,25 @@ function Π_true(
 	)
 	
 	1 - normcdf( g(X_a,a)./σ_e )
+end
+
+
+
+function unpackparams(θ::Array{Float64})
+  d = minimum(size(θ))
+  θ = squeeze(θ,d)
+  γ_1 = θ[1]
+  γ_2 = θ[2]
+  α_1 = θ[3]
+  α_2 = θ[4]
+  σ_e = θ[5]
+  σ_v = θ[6]
+
+  return [ 
+  "γ_1" => γ_1,
+  "γ_2" => γ_2,
+  "α_1" => α_1,
+  "α_2" => α_2,
+  "σ_e" => σ_e,
+  "σ_v" => σ_v ]
 end

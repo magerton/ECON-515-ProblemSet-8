@@ -45,7 +45,7 @@
 % ------------------------------------------------------
 
 \title{\textbf{Homework 8} \\ Labor Economics}
-\author{Mark Agerton and Nick Frazier}
+\author{Mark Agerton and {\color{cyan} Nick Frazier} }
 \date{Due Mon, April 13}
 
 % ------------------------------------------------------
@@ -94,7 +94,7 @@ Objective is
 
 Write problem recursively for lazy:
 \[
-V_a^0(x,y,\epsilon_a) = \gamma_1 + (1+\gamma_2)y + \beta E[V_{a+1}(x,y,\epsilon_{a+1})]
+V_a^0(x,y,\epsilon_a) = \gamma_1 + (1+\gamma_2)y + \beta E[V_{a+1}( {\color{cyan} x+1},y,\epsilon_{a+1})]
 \]
 and working:
 \[
@@ -176,7 +176,11 @@ Note that we could simply use the general definition for $V_a$ and $g(x,y,a)$ an
 
 \section{Estimation}
 
-We have states $\Omega_{ia} = (x,y,a,\epsilon)_{ia}$ and control $p_{ia} \in \{0,1\}$. Parameters are
+We have states $\Omega_{ia} = (x,y,a,\epsilon)_{ia}$ and control $p_{ia} \in \{0,1\}$. 
+
+Immediately we can get parameters governing distribution of non-labor income from a kernel density estimation of observed $y_i$ values. Or, since we know if we know the underlying distribution we just need $\mu_y$ and $\sigma_y$ which can be estimated by $N^{-1}\sum\nolimits_i y_i$ and $\widehat{SE(y_i)}$. Number of periods is irrelevant and are consistent as $N\rightarrow \infty$. .
+
+Remaining parameters are
 \[
 \theta = \{ \alpha_1, \alpha_2, \gamma_1, \gamma_2, \sigma_\epsilon^2, \sigma^2_\nu \}
 \]
@@ -188,7 +192,7 @@ Note that $g(x,y,a)$ is a function of $a$ because it has $\Delta E[V_{a+1}(x,y)]
 
 \subsection{Plan}
 \begin{enumerate}
-    \item Given $\theta$, calculate functions
+    \item Given $\theta$, calculate functions {\color{cyan} I think we are just starting at $t=A$ here and so $\Delta E[V_{a+1}(x,y)] = 0$ and we do not need to fix a $\theta$. Can recover $g$ without.}
     \item Run probit for working in $A$
     \item Estimate wages as 
     \[

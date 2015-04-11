@@ -10,17 +10,18 @@ using PyPlot
 pwd()
 
 include("code/functions.jl")
+include("code/functions_probit.jl")
 
 ###########################
 # Specify Model Parameters
 ###########################
-A    = 3          # Number of Periods
+A    = 4          # Number of Periods
 γ_1  = 2.0        # Leisure Coefficient
 γ_2  = 1.0        # Consumption-Leisure Interaction Coefficient
 δ    = 0.1        # Discount Rate
 N    = 4          # Number of Individuals
 σ_e  = 10         # Standard Error of Wage Shock
-σ_v  = 0.3        # Standard Error of Measurement Error
+σ_v  = 1000       # Standard Error of Measurement Error
 α_1  = 1          # Wage Function Parameter
 α_2  = 5         # Wage Function Parameter
 μ_y  = 0          # Mean of non-labor income
@@ -114,8 +115,8 @@ for tt in A:-1:1
         # Weight values by probability of occurence (cond'l on e_{ia})
         Π = Π_true(X_a,tt)
         (df[EV_a_x])[df[:A].==tt] = 
-            y + (1-Π).*( leisure_value_t(tt) + EV_0 )
-            + Π.*( EV_1 )
+            (1-Π).*( leisure_value_t(tt) + β*EV_0 )
+            + Π.*( y + β*EV_1 )
             + exp(.5*σ_e^2)*wage_eqn(X_a, zeros(N)).*
             ( 1 - normcdf( (g(X_a,tt) - σ_e^2)/σ_e ) )    
     end
@@ -153,7 +154,8 @@ for jj in 1:A
 
         WORKED = DATA[P_a][df[:A].== jj]
         tW_a = (df[symbol("w_$(jj)_x$(x)")][ df[:A].==jj ])
-        tW = DATA[W_a][df[:A].== jj]
+        # don't forget measurement error, + v
+        tW = DATA[W_a][df[:A].== jj] + df[:v][df[:A].== jj]
         tW[WORKED.==true] = tW_a[WORKED.==true]
         DATA[W_a][df[:A].== jj] = tW
     end 
@@ -165,63 +167,24 @@ end
 DATA
 
 
-# reco er path and record data
+##################################
+######## Estimation
+##################################
 
-        # # observed wage
-        # (df[symbol("ow_x$(x)")])[df[:A].==tt]
-        #      = obs_wage_eqn(X_a,(df[:e])[df[:A].==tt]),(df[:v])[df[:A].==tt])  # Wage with Measurement Error
-        # # delete!(df,V_a_x_no)
-        # # delete!(df,V_a_x_yes)
-        # # delete!(df,EV_a_x)
+# want to find 
 
 
+global count = 1
 
 
-#  get rid of Value of A+1 since always 0.0
+initials = ones(6)
 
-for x in 0:A
-    delete!(df,symbol("EV_$(A+1)_x$(x)"))
-    delete!(df,symbol("V_$(A+1)_x$(x)"))
+aa = 1
+probit_opt = []
+for i =1:5
+  probit_opt = optimize(probit_wrapper,vec(initials),autodiff = true,
+      ftol=1e-12)
+  initials = probit_opt.minimum
 end
-
-head(df)
-
-
-
-
-e = (df[:e])[df[:A] .== a]
-
-
-
-# ################################
-# # Clean Dataset for Regressions
-# ################################
-# # Delete Error Terms
-# delete!(df,:e)
-# delete!(df,:v)
-# # Delete True Wages and Values
-# for x in 0:2
-#     delete!(df,symbol("wT$x"))
-#     delete!(df,symbol("V$x"))
-# end
-# # Delete State Contingent Values and Expected State Contingent Values
-# for x in 0:1
-#     delete!(df,symbol("fV0x$x"))
-#     delete!(df,symbol("fV1x$x"))
-#     delete!(df,symbol("V0x$x"))
-#     delete!(df,symbol("V1x$x"))
-# end
-# # Censor Wages
-# df[:W] = 0.0
-# for x = 0:2
-#     for i in 1:N*A
-#         if x == df[i,:Xs]
-#             if df[i,:X] == 1
-#                 df[i,:W] = df[i,symbol("wF$x")]
-#             end
-#         end
-#     end
-#     delete!(df,symbol("wF$x"))
-# end
-# df
-
+probit_opt
+θ = probit_opt.minimum
