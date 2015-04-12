@@ -17,22 +17,22 @@ include("code/functions_probit.jl")
 # Specify Model Parameters
 ###########################
 A    = 11         # Number of Periods
-γ_1  = 0.30        # Leisure Coefficient
-γ_2  = 0.50        # Consumption-Leisure Interaction Coefficient
+γ_1  = 0.300        # Leisure Coefficient
+γ_2  = 0.500        # Consumption-Leisure Interaction Coefficient
 δ    = 0.1        # Discount Rate
-N    = 15000          # Number of Individuals
-σ_e  = 1.0        # Standard Error of Wage Shock
-σ_v  = 0.1       # Standard Error of Measurement Error
-α_1  = 5.0          # Wage Function Parameter
-α_2  = 0.5         # Wage Function Parameter
-α_3  = -0.1         # wage function parameter
+N    = 50000          # Number of Individuals
+σ_e  = 1.000        # Standard Error of Wage Shock
+σ_v  = 0.100       # Standard Error of Measurement Error
+α_1  = 5.000          # Wage Function Parameter
+α_2  = 0.500         # Wage Function Parameter
+α_3  = -0.100         # wage function parameter
 μ_y  = 0.0          # Mean of non-labor income
 σ_y  = 2.0          # std dev of non-labor income
 # yL = 0          # Minimum Non-Labor Income
 # yH = 1000          # Top Non-Labor Income
 
 θ_real = [γ_1; γ_2; α_1; α_2; α_3; σ_e]
-
+β_real = [α_1; α_2; α_3; σ_e]
 # srand(12345)
 
 β = 1/(1+δ)
@@ -175,7 +175,6 @@ perc_a = zeros(A)
 for a in 1:A
     perc_a[a] = sum( DATA[symbol("P_$(a)")][DATA[:A].== a ]  )/N
 end
-perc_a
 
 ##################################
 ######## Estimation
@@ -191,81 +190,86 @@ perc_a
 # fig2 = title("Kernel density of \$g\$")
 # savefig("./plots/KdenX.jpg")
 
-
-
-
-
 θ = θ_real
-probit_LL(θ_real)
 
-ntheta = length(θ)
-initials = ones(ntheta)
-initials = θ 
+ntheta = length(θ_real)
+nbeta  = length(β_real)
 
-AAA = A
-probit_opt = []
-global count = 1
-for i =1:5
-  probit_opt = optimize(probit_wrapper,vec(initials),autodiff = true,
-      ftol=1e-12,
-      iterations = 2000)
-   initials = probit_opt.minimum
-  initials = probit_opt.minimum 
-end
-show(probit_opt)
-println("\n")
-println("$(probit_opt.minimum)")
-println("\n")
-println("$θ_real \n")
-
-println("$perc_a")
-# θ = probit_opt.minimum
-# θ_star = [ 2.0  1.0 1.0  5.0  10.0 ]
-
-# show([θ'; θ_star])
-
-θ_hat = probit_opt.minimum
+θ_MLE = zeros(A,ntheta)
+β_ols = zeros(A,nbeta)
+Σ_w       = zeros(A)
+Σ_ols     = zeros(nbeta,nbeta,A)
 
 
-for tt in A:A
-
-	W_a = DATA[symbol("W_$(tt)")][DATA[:A].==tt]
-	X_a = DATA[symbol("X_$(tt)")][DATA[:A].==tt]
-	P_a = DATA[symbol("P_$(tt)")][DATA[:A].==tt]
-
-	W_a = W_a[P_a .== true]
-	X_a = X_a[P_a.== true]
-
-	Y_mat = log(W_a) 
-	X_mat = [ones(int(sum(P_a))) X_a X_a.^2 λ(θ_hat)[P_a.==true]]
-
-	(α_w_ols, Σ_w, Σ_α) = least_sq(X_mat,Y_mat)
-
+for tt in A+1:-1:1
+    DATA[symbol("EV_$(tt)_x")] = 0.0  
+    DATA[symbol("EV_$(tt)_x1")] = 0.0  
 end
 
 
+for tt in A:A  # for every period, starting at A and working backward
 
+    initials = ones(ntheta)
+    initials = θ 
+
+    probit_opt = []
+    global count = 1
+    for i =1:5
+      probit_opt = optimize(probit_wrapper,vec(initials),autodiff = true,
+          ftol=1e-12,
+          iterations = 2000)
+      initials = probit_opt.minimum 
+    end
+    show(probit_opt)
+
+    θ_MLE[tt,:] = probit_opt.minimum
+
+
+
+
+    # Second stage
+
+    θ_hat = probit_opt.minimum
+
+    W_a = DATA[symbol("W_$(tt)")][DATA[:A].==tt]
+    X_a = DATA[symbol("X_$(tt)")][DATA[:A].==tt]
+    P_a = DATA[symbol("P_$(tt)")][DATA[:A].==tt]
+
+    W_a = W_a[P_a .== true]
+    X_a = X_a[P_a.== true]
+
+    Y_mat = log(W_a) 
+    X_mat = [ones(int(sum(P_a))) X_a X_a.^2 λ(θ_hat)[P_a.==true]]
+
+    (β_ols[tt,:], Σ_w[tt], Σ_ols[:,:,tt]) = least_sq(X_mat,Y_mat)
+
+    # Calculate EV_a_x and EV_a_x1 (current period)
+    ## assumes value for next period already exists
+    EV_hat(θ_hat,tt)
+
+end
+
+
+θ_names = ["γ_1" "γ_2" "α_1" "α_2" "α_3" "σ_e"] 
+β_names = ["α_1" "α_2" "α_3" "σ_e"] 
+
+for tt in 1:A
+    println("Percentage that worked in period $tt:")
+    println("$(round(perc_a,2)) \n")
+    println("\n LLN value at θ true: $(round(probit_LL(θ_MLE[tt,:][:]),3)) \n \n")
+
+    println("\n MLE Parameters: \n \t TRUE \t ESTIMATED")
+    for ii in 1:ntheta
+        println("")
+        println("$(θ_names[ii]) \t $(round(θ_real[ii],3)) \t $(round(θ_MLE[tt,ii],3))")
+    end
+
+    println("\n OLS Parameters: \n \t TRUE \t ESTIMATED")
+    for ii in 1:nbeta
+        println("")
+        println("$(β_names[ii]) \t $(round(β_real[ii],3)) \t $(round(β_ols[tt,ii],3))")
+    end
+
+end
 
 # In progress
-
-function EV_hat(X_a,Y_a)
-
-    p_vec = unpackparams(θ)
-    γ_1 = p_vec["γ_1"]
-    γ_2 = p_vec["γ_2"]
-    α_1 = p_vec["α_1"]
-    α_2 = p_vec["α_2"]
-    α_3 = p_vec["α_3"]
-    σ_e = p_vec["σ_e"]
-
-    Π = Π_work(θ_hat, X_a,tt)   
-    (df[EV_a_x])[df[:A].==tt] = 
-        (1-Π).*( leisure_value_t(θ_hat,tt) 
-        + β*df[EV_a1_x][df[:A].==tt] )
-        + Π.*( y + β*df[EV_a1_x1][df[:A].==tt] )
-        + exp(.5*σ_e^2)*wage_eqn(θ_hat,X_a, zeros(N)).*
-        ( 1 - normcdf( (g(θ_hat,X_a,tt) - σ_e^2)/σ_e ) )    
-
-
-
-end

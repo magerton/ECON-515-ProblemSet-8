@@ -8,7 +8,8 @@ function leisure_value_t(
     γ_1 = p_vec["γ_1"]
     γ_2 = p_vec["γ_2"]
 
-	γ_1 + (1 + γ_2).*(df[:Y])[df[:A] .== a] 
+    # calls df but for :Y and :A same as DATA
+  	γ_1 + (1 + γ_2).*(df[:Y])[df[:A] .== a] 
 end
 
 function wage_eqn(
@@ -34,7 +35,6 @@ function obs_wage_eqn(
 
 	exp( log(wage_eqn(θ,X_a,e)) + v )
 end
-
 
 function g(
 	θ::Array{Float64},
@@ -65,6 +65,72 @@ function Π_work(
 	
 	1 - normcdf( g(θ,X_a,a)./σ_e )
 end
+
+function E_g_fun(
+    θ::Array{Float64},
+    X_a::Union(Array{Int64}, DataArray),
+    tt::Int64)
+
+    p_vec = unpackparams(θ)
+    γ_1   = p_vec["γ_1"]
+    γ_2   = p_vec["γ_2"]
+    α_1   = p_vec["α_1"]
+    α_2   = p_vec["α_2"]
+    α_3   = p_vec["α_3"]
+    σ_e   = p_vec["σ_e"]
+
+    g_fun = log( 
+         leisure_value_t(θ_hat,tt) - y + β*(EV_a1_0 - EV_a1_1)  )
+    - wage_eqn(θ_hat,X_a,zeros(N))     
+    
+end
+
+
+function EV_hat(
+    θ::Array{Float64},
+    tt::Int64
+    )
+
+    p_vec = unpackparams(θ)
+    γ_1   = p_vec["γ_1"]
+    γ_2   = p_vec["γ_2"]
+    α_1   = p_vec["α_1"]
+    α_2   = p_vec["α_2"]
+    α_3   = p_vec["α_3"]
+    σ_e   = p_vec["σ_e"]
+    
+    X_a      = DATA[symbol("X_$(tt)")][DATA[:A].==tt]
+    X_a_p1   = X_a + 1
+    y        = DATA[:Y][DATA[:A].== tt] # N-vec of non-labor income at a
+    # will update entry for current period
+    EV_a_x   = symbol("EV_$(tt)_x") # exp of being at a with x
+    EV_a_x1  = symbol("EV_$(tt)_x1") # exp of being at a with x+1
+    # use next period's in calculation
+    EV_a1_x  = symbol("EV_$(tt)_x") # exp of being at a with x
+    EV_a1_x1 = symbol("EV_$(tt)_x1") # exp of being at a with x+1
+    EV_a1_1  = (DATA[EV_a_x1])[DATA[:A] .== a] 
+    EV_a1_0 = (DATA[EV_a_x])[DATA[:A] .== a] 
+    
+
+    # EV if not working in a
+    Π = 1 - normcdf( E_g_fun(θ_hat,X_a,tt)./σ_e )
+    (DATA[EV_a_x])[DATA[:A].==tt] = 
+        (1-Π).*( leisure_value_t(θ_hat,tt) 
+        + β*DATA[EV_a1_x][DATA[:A].==tt] )
+        + Π.*( y + β*DATA[EV_a1_x1][df[:A].==tt] )
+        + exp(.5*σ_e^2)*wage_eqn(θ_hat,X_a, zeros(N)).*
+        ( 1 - normcdf( (E_g_fun(θ_hat,X_a,tt) - σ_e^2)/σ_e ) )    
+
+    # EV if working in a
+    Π = 1 - normcdf( E_g_fun(θ_hat,X_a,tt)./σ_e )
+    (DATA[EV_a_x1])[DATA[:A].==tt] = 
+        (1-Π).*( leisure_value_t(θ_hat,tt) 
+        + β*DATA[EV_a1_x][DATA[:A].==tt] )
+        + Π.*( y + β*DATA[EV_a1_x1][df[:A].==tt] )
+        + exp(.5*σ_e^2)*wage_eqn(θ_hat,X_a_p1, zeros(N)).*
+        ( 1 - normcdf( (E_g_fun(θ_hat,X_a_p1,tt) - σ_e^2)/σ_e ) )    
+end
+
 
 function unpackparams(θ::Array{Float64})
   d = minimum(size(θ))

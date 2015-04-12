@@ -20,7 +20,7 @@ end
 
 function probit_LL(θ::Vector{Float64})
 
-	P = DATA[symbol("P_$(AAA)")][DATA[:A].== AAA]
+	P = DATA[symbol("P_$(tt)")][DATA[:A].== tt]
 
 	g_over_sig = normcdf( probit_input(θ))
 	out = P.*log( 1 - g_over_sig ) + (1-P).*log(g_over_sig)
@@ -41,15 +41,17 @@ function probit_input(θ::Array{Float64})
   	α_2 = p_vec["α_2"]
   	α_3 = p_vec["α_3"]
   	σ_e = p_vec["σ_e"]
-
-  	Y_a = DATA[:Y][DATA[:A].== AAA]
-  	X_a = DATA[symbol("X_$(AAA)")][DATA[:A].==AAA]
-
-
-	term = [ones(N) Y_a]*[γ_1; γ_2 ]
-	term[term .<= 0] = NaN
+		
+	Y_a   = DATA[:Y][DATA[:A].== tt]
+	X_a   = DATA[symbol("X_$(tt)")][DATA[:A].==tt]
+	EV_x  = DATA[symbol("EV_$(tt+1)_x")][DATA[:A].==tt]
+	EV_x1 = DATA[symbol("EV_$(tt+1)_x1")][DATA[:A].==tt]
 	
-	g_over_sig = (log(term) - [ones(N) X_a X_a.^2]*[α_1; α_2;α_3])./σ_e
+	term  = [ones(N) Y_a]*[γ_1; γ_2 ] + β*(EV_x - EV_x1)
+	
+	term[term . <= 0] = NaN
+
+	g_over_sig  = (log(term) - [ones(N) X_a X_a.^2]*[α_1; α_2;α_3])./σ_e
 
 	return g_over_sig
 end
