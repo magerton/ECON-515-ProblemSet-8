@@ -202,30 +202,6 @@ for A in A_min:A_max
         DATA[symbol("EV_$(tt)_x1")] = 0.0  
     end
 
-
-    # # map g function
-    # k = kde(probit_input(θ_real))
-
-    # fig2 = figure()
-    # fig2 = plot(k)
-    # fig2 = title("Kernel density of Work Probit Input")
-    # savefig("./plots/KdenX.jpg")
-
-
-    # k_y = kde(log(df[:Y][df[:A].== 1]))
-    # fig3 = figure()
-    # fig3 = plot(k_y)
-    # fig3 = title("Kernel density of Log(Non-Labor Income)")
-    # savefig("./plots/Yden_normal.jpg")
-
-    # fig4 = figure()
-    # fig4 = plot([1:A],perc_a)
-    # fig4 = xlabel("Periods")
-    # fig4 = ylabel("Perc Working")
-    # fig4 = title("Percentage of people working in every period")
-    # savefig("./plots/perc_working.jpg")    
-
-
     for tt in A:-1:1  # for every period, starting at A and working backward
 
         initials = ones(ntheta)
@@ -319,3 +295,29 @@ fig5 = title("Time Taken to Run Model, N=$(N)")
 fig5 = xlabel("Number of Periods")
 fig5 = ylabel("Seconds")
 savefig("./plots/time_taken.jpg")
+
+
+
+
+    # # map g function
+    # k = kde(probit_input(θ_real))
+
+    # fig2 = figure()
+    # fig2 = plot(k)
+    # fig2 = title("Kernel density of Work Probit Input")
+    # savefig("./plots/KdenX.jpg")
+
+
+    # k_y = kde(log(df[:Y][df[:A].== 1]))
+    # fig3 = figure()
+    # fig3 = plot(k_y)
+    # fig3 = title("Kernel density of Log(Non-Labor Income)")
+    # savefig("./plots/Yden_normal.jpg")
+
+    # fig4 = figure()
+    # fig4 = plot([1:A],perc_a)
+    # fig4 = xlabel("Periods")
+    # fig4 = ylabel("Perc Working")
+    # fig4 = title("Percentage of people working in every period")
+    # savefig("./plots/perc_working.jpg")    
+
