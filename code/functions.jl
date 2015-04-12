@@ -79,9 +79,21 @@ function E_g_fun(
     α_3   = p_vec["α_3"]
     σ_e   = p_vec["σ_e"]
 
-    g_fun = log( 
-         leisure_value_t(θ_hat,tt) - y + β*(EV_a1_0 - EV_a1_1)  )
-    - wage_eqn(θ_hat,X_a,zeros(N))     
+    X_a      = DATA[symbol("X_$(tt)")][DATA[:A].==tt]
+    X_a_p1   = X_a + 1
+    y        = DATA[:Y][DATA[:A].== tt] # N-vec of non-labor income at a
+    # will update entry for current period
+    EV_a_x   = symbol("EV_$(tt)_x") # exp of being at a with x
+    EV_a_x1  = symbol("EV_$(tt)_x1") # exp of being at a with x+1
+    # use next period's in calculation
+    EV_a1_x  = symbol("EV_$(tt)_x") # exp of being at a with x
+    EV_a1_x1 = symbol("EV_$(tt)_x1") # exp of being at a with x+1
+    EV_a1_1  = (DATA[EV_a_x1])[DATA[:A] .== tt] 
+    EV_a1_0 = (DATA[EV_a_x])[DATA[:A] .== tt] 
+    
+    log_term = leisure_value_t(θ,tt) - y + β*(EV_a1_0 - EV_a1_1) 
+    log_term[log_term .<= 0] = eps()
+    g_fun = log( log_term ) - wage_eqn(θ,X_a,zeros(N))     
     
 end
 
@@ -108,27 +120,27 @@ function EV_hat(
     # use next period's in calculation
     EV_a1_x  = symbol("EV_$(tt)_x") # exp of being at a with x
     EV_a1_x1 = symbol("EV_$(tt)_x1") # exp of being at a with x+1
-    EV_a1_1  = (DATA[EV_a_x1])[DATA[:A] .== a] 
-    EV_a1_0 = (DATA[EV_a_x])[DATA[:A] .== a] 
+    EV_a1_1  = (DATA[EV_a_x1])[DATA[:A] .== tt] 
+    EV_a1_0 = (DATA[EV_a_x])[DATA[:A] .== tt] 
     
 
     # EV if not working in a
-    Π = 1 - normcdf( E_g_fun(θ_hat,X_a,tt)./σ_e )
+    Π = 1 - normcdf( E_g_fun(θ,X_a,tt)./σ_e )
     (DATA[EV_a_x])[DATA[:A].==tt] = 
-        (1-Π).*( leisure_value_t(θ_hat,tt) 
+        (1-Π).*( leisure_value_t(θ,tt) 
         + β*DATA[EV_a1_x][DATA[:A].==tt] )
         + Π.*( y + β*DATA[EV_a1_x1][df[:A].==tt] )
-        + exp(.5*σ_e^2)*wage_eqn(θ_hat,X_a, zeros(N)).*
-        ( 1 - normcdf( (E_g_fun(θ_hat,X_a,tt) - σ_e^2)/σ_e ) )    
+        + exp(.5*σ_e^2)*wage_eqn(θ,X_a, zeros(N)).*
+        ( 1 - normcdf( (E_g_fun(θ,X_a,tt) - σ_e^2)/σ_e ) )    
 
     # EV if working in a
-    Π = 1 - normcdf( E_g_fun(θ_hat,X_a,tt)./σ_e )
+    Π = 1 - normcdf( E_g_fun(θ,X_a,tt)./σ_e )
     (DATA[EV_a_x1])[DATA[:A].==tt] = 
-        (1-Π).*( leisure_value_t(θ_hat,tt) 
+        (1-Π).*( leisure_value_t(θ,tt) 
         + β*DATA[EV_a1_x][DATA[:A].==tt] )
         + Π.*( y + β*DATA[EV_a1_x1][df[:A].==tt] )
-        + exp(.5*σ_e^2)*wage_eqn(θ_hat,X_a_p1, zeros(N)).*
-        ( 1 - normcdf( (E_g_fun(θ_hat,X_a_p1,tt) - σ_e^2)/σ_e ) )    
+        + exp(.5*σ_e^2)*wage_eqn(θ,X_a_p1, zeros(N)).*
+        ( 1 - normcdf( (E_g_fun(θ,X_a_p1,tt) - σ_e^2)/σ_e ) )    
 end
 
 

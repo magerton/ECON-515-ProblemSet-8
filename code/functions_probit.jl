@@ -49,7 +49,7 @@ function probit_input(θ::Array{Float64})
 	
 	term  = [ones(N) Y_a]*[γ_1; γ_2 ] + β*(EV_x - EV_x1)
 	
-	term[term . <= 0] = NaN
+	term[term .<= 0] = NaN
 
 	g_over_sig  = (log(term) - [ones(N) X_a X_a.^2]*[α_1; α_2;α_3])./σ_e
 
