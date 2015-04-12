@@ -16,16 +16,16 @@ include("code/functions_probit.jl")
 ###########################
 # Specify Model Parameters
 ###########################
-A    = 7         # Number of Periods
-γ_1  = 1.00        # Leisure Coefficient
+A    = 11         # Number of Periods
+γ_1  = 0.30        # Leisure Coefficient
 γ_2  = 0.50        # Consumption-Leisure Interaction Coefficient
 δ    = 0.1        # Discount Rate
-N    = 20000          # Number of Individuals
+N    = 15000          # Number of Individuals
 σ_e  = 1.0        # Standard Error of Wage Shock
 σ_v  = 0.1       # Standard Error of Measurement Error
-α_1  = 0.5          # Wage Function Parameter
-α_2  = 1.0         # Wage Function Parameter
-α_3  = -0.2         # wage function parameter
+α_1  = 5.0          # Wage Function Parameter
+α_2  = 0.5         # Wage Function Parameter
+α_3  = -0.1         # wage function parameter
 μ_y  = 0.0          # Mean of non-labor income
 σ_y  = 2.0          # std dev of non-labor income
 # yL = 0          # Minimum Non-Labor Income
@@ -73,47 +73,44 @@ for tt in A:-1:1
     for x in 0:tt
         println("$tt and $x")
 
-        # Convenience
-        X_a = int(x.*ones(N)) # give everyone X = x at a
-        E_a = (df[:e])[df[:A].==tt] # errors this period
-        y = df[:Y][df[:A].== tt] # N-vec of non-labor income at a
+		# Convenience
+		X_a   = int(x.*ones(N)) # give everyone X = x at a
+		E_a   = (df[:e])[df[:A].==tt] # errors this period
+		y     = df[:Y][df[:A].== tt] # N-vec of non-labor income at a
+		
+		##### WAGES
+		w_a_x = symbol("w_$(tt)_x$(x)") # wage[ A= a, X = x] 
+		w_a   = symbol("w_$(tt)") # observed wage at a    
+		
+		#####  VALUES
+		# generated before
+		EV_a1_x   = symbol("EV_$(tt+1)_x$(x)") # of being at a+1 with x (didn't work)
+		EV_a1_x1  = symbol("EV_$(tt+1)_x$(x+1)") # being at a+1 with x+1 (did work)
+		
+		# generated here
+		V_a_x     = symbol("V_$(tt)_x$(x)") # being at a with x
+		EV_a_x    = symbol("EV_$(tt)_x$(x)") # exp of being at a with x
+		V_a_x_no  = symbol("V_$(tt)_x$(x)_no") # of working this period
+		V_a_x_yes = symbol("V_$(tt)_x$(x)_yes") # not working this period
+		
+		##### POLICY FUNCITON
+		p_a_x     = symbol("p_$(tt)_x$(x)") # actual policy function
+		
 
-        ##### WAGES
-        w_a_x  = symbol("w_$(tt)_x$(x)") # wage[ A= a, X = x] 
-        w_a    = symbol("w_$(tt)") # observed wage at a    
-
-        #####  VALUES
-        # generated before
-        EV_a1_x    = symbol("EV_$(tt+1)_x$(x)") # of being at a+1 with x (didn't work)
-        EV_a1_x1   = symbol("EV_$(tt+1)_x$(x+1)") # being at a+1 with x+1 (did work)
-
-        # generated here
-        V_a_x      = symbol("V_$(tt)_x$(x)") # being at a with x
-        EV_a_x     = symbol("EV_$(tt)_x$(x)") # exp of being at a with x
-        V_a_x_no   = symbol("V_$(tt)_x$(x)_no") # of working this period
-        V_a_x_yes  = symbol("V_$(tt)_x$(x)_yes") # not working this period
-
-        ##### POLICY FUNCITON
-        p_a_x      = symbol("p_$(tt)_x$(x)") # actual policy function
-        
-
-
-        # Add Wages to Dataset
-        # True Wage
-        df[w_a_x][df[:A].==tt] = 
-            wage_eqn(θ_real, X_a,(df[:e])[df[:A].==tt])          
-
-
-# take out of Dataframe
-        # value of not working
-        df[V_a_x_no][df[:A].==tt] = leisure_value_t(θ_real, tt) + (df[EV_a1_x])[df[:A].==tt]
-        # value of working       
-        df[V_a_x_yes][df[:A].==tt] = y + wage_eqn(θ_real, X_a,E_a) + df[EV_a1_x1][df[:A].==tt]
-
-        # Choose between and record
-        df[p_a_x][df[:A].==tt] = df[V_a_x_no][df[:A].==tt] .< df[V_a_x_yes][df[:A].==tt]
-        (df[V_a_x])[df[p_a_x].==false] = (df[V_a_x_no])[df[p_a_x].==false]
-        (df[V_a_x])[df[p_a_x].==true] = (df[V_a_x_yes])[df[p_a_x].==true]
+		
+		# Add Wages to Dataset
+		# True Wage
+		df[w_a_x][df[:A]      .==tt] = wage_eqn(θ_real,X_a,E_a)          
+		
+		# value of not working
+		df[V_a_x_no][df[:A]   .==tt] = leisure_value_t(θ_real, tt) + (df[EV_a1_x])[df[:A].==tt]
+		# value of working       
+		df[V_a_x_yes][df[:A]  .==tt] = y + wage_eqn(θ_real, X_a,E_a) + df[EV_a1_x1][df[:A].==tt]
+		
+		# Choose between and record
+		df[p_a_x][df[:A]      .==tt] = df[V_a_x_no][df[:A].==tt] .< df[V_a_x_yes][df[:A].==tt]
+		(df[V_a_x])[df[p_a_x] .==false] = (df[V_a_x_no])[df[p_a_x].==false]
+		(df[V_a_x])[df[p_a_x] .==true] = (df[V_a_x_yes])[df[p_a_x].==true]
 
         # calculate expected value of being at current period
         # Correct expectations for selection
@@ -124,7 +121,7 @@ for tt in A:-1:1
             + β*df[EV_a1_x][df[:A].==tt] )
             + Π.*( y + β*df[EV_a1_x1][df[:A].==tt] )
             + exp(.5*σ_e^2)*wage_eqn(θ_real,X_a, zeros(N)).*
-            ( 1 - normcdf( (g(θ_real,X_a,tt) - σ_e^2)/σ_e ) )    
+            ( 1 - normcdf( (g(θ_real,X_a,tt) - σ_e^2)./σ_e ) )    
     end
 end
 head(df)
@@ -170,7 +167,7 @@ for jj in 1:A
         (DATA[X_a1])[df[:A].== jj+1] = X_vec + (DATA[P_a][df[:A].== jj])
     end
 end
-DATA
+# DATA
 
 
 # percentage that work in period A
@@ -198,20 +195,12 @@ perc_a
 
 
 
-
-
-
-
-
-
-
 θ = θ_real
-
+probit_LL(θ_real)
 
 ntheta = length(θ)
 initials = ones(ntheta)
-# initials = θ_real
-
+initials = θ 
 
 AAA = A
 probit_opt = []
@@ -220,7 +209,8 @@ for i =1:5
   probit_opt = optimize(probit_wrapper,vec(initials),autodiff = true,
       ftol=1e-12,
       iterations = 2000)
-  initials = probit_opt.minimum + randn(ntheta)
+   initials = probit_opt.minimum
+  initials = probit_opt.minimum 
 end
 show(probit_opt)
 println("\n")
@@ -236,24 +226,27 @@ println("$perc_a")
 
 θ_hat = probit_opt.minimum
 
-W_a = DATA[symbol("W_$(tt)")][DATA[:A].==tt]
-X_a = DATA[symbol("X_$(tt)")][DATA[:A].==tt]
 
-function λ(t)
-    normpdf( probit_input(t) )./(1-normcdf(t))
+for tt in A:A
+
+	W_a = DATA[symbol("W_$(tt)")][DATA[:A].==tt]
+	X_a = DATA[symbol("X_$(tt)")][DATA[:A].==tt]
+	P_a = DATA[symbol("P_$(tt)")][DATA[:A].==tt]
+
+	W_a = W_a[P_a .== true]
+	X_a = X_a[P_a.== true]
+
+	Y_mat = log(W_a) 
+	X_mat = [ones(int(sum(P_a))) X_a X_a.^2 λ(θ_hat)[P_a.==true]]
+
+	(α_w_ols, Σ_w, Σ_α) = least_sq(X_mat,Y_mat)
+
 end
 
-end
-Y_mat = ln(W_a) 
-X_mat = [ones(N) X_a X_a.^2 λ(θ_hat)]
-
-(α_w_ols, Σ_w, Σ_α) = least_sq(X_mat,Y_mat)
 
 
 
-
-
-
+# In progress
 
 function EV_hat(X_a,Y_a)
 

@@ -25,7 +25,7 @@ function probit_LL(θ::Vector{Float64})
 	g_over_sig = normcdf( probit_input(θ))
 	out = P.*log( 1 - g_over_sig ) + (1-P).*log(g_over_sig)
 
-	# clean output (I HATE NaNs)
+	# clean output
 	out[isnan(out).==1] = - 1e50
 	out = - sum( out )
 

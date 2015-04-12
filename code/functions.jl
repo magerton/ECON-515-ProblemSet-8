@@ -17,10 +17,10 @@ function wage_eqn(
 	e  ::Union(Array{Float64}, Float64, DataArray)
 	)
 
-    p_vec = unpackparams(θ)
-    α_1 = p_vec["α_1"]
-    α_2 = p_vec["α_2"]
-    α_3 = p_vec["α_3"]
+  p_vec = unpackparams(θ)
+  α_1 = p_vec["α_1"]
+  α_2 = p_vec["α_2"]
+  α_3 = p_vec["α_3"]
 
 	exp( α_1 + α_2.*X_a + α_3.*(X_a.^2) + e )
 end
@@ -49,9 +49,9 @@ function g(
 	y        = (df[:Y])[df[:A] .== a]
 
 	log( 
-		leisure_value_t(θ,a) 
-		- y + β*(EV_0 - EV_1)
-		)  - wage_eqn(θ,X_a,zeros(N)) 
+		 leisure_value_t(θ,a) 
+		 - y + β*(EV_0 - EV_1)  )
+    - wage_eqn(θ,X_a,zeros(N)) 
 end
 
 function Π_work(
@@ -60,10 +60,10 @@ function Π_work(
 	a  ::Int64
 	)
 
-    p_vec = unpackparams(θ)
-    σ_e = p_vec["σ_e"]
+  p_vec = unpackparams(θ)
+  σ_e = p_vec["σ_e"]
 	
-	1 - normcdf( g(X_a,a)./σ_e )
+	1 - normcdf( g(θ,X_a,a)./σ_e )
 end
 
 function unpackparams(θ::Array{Float64})
@@ -92,7 +92,7 @@ end
 
 function least_sq(
 	X::Union(Array,DataArray,Float64),
-	Y::Array;
+	Y::Union(Array,DataArray,Float64);
 	N=int(size(X,1)), W=1
 	)
 
@@ -115,6 +115,9 @@ end
 
 
 
+function λ(t)
+    normpdf( probit_input(t) )./(1-normcdf(probit_input(t)))
+end
 
 
 
