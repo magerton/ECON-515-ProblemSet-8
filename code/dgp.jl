@@ -12,10 +12,11 @@ pwd()
 include("code/functions.jl")
 include("code/functions_probit.jl")
 
-A_max = 25
+A_min = 11
+A_max = 11
 time_taken = zeros(A_max)
 
-for A in 1:A_max
+for A in A_min:A_max
 
     tic()
 
@@ -26,7 +27,7 @@ for A in 1:A_max
     γ_1  = 0.300        # Leisure Coefficient
     γ_2  = 0.500        # Consumption-Leisure Interaction Coefficient
     δ    = 0.1          # Discount Rate
-    N    = 10000        # Number of Individuals
+    N    = 35000        # Number of Individuals
     σ_e  = 1.000        # Standard Error of Wage Shock
     σ_v  = 0.100        # Standard Error of Measurement Error
     α_1  = 5.000        # Wage Function Parameter
@@ -73,8 +74,6 @@ for A in 1:A_max
     head(df)
 
     # fill in values
-    tt = 3
-    x = 0
     for tt in A:-1:1
         for x in 0:tt
             println("$tt and $x")
@@ -204,22 +203,27 @@ for A in 1:A_max
     end
 
 
-    # map g function
-    k = kde(probit_input(θ_real))
+    # # map g function
+    # k = kde(probit_input(θ_real))
 
-    fig2 = figure
-    fig2 = plot(k)
+    # fig2 = figure()
+    # fig2 = plot(k)
+    # fig2 = title("Kernel density of Work Probit Input")
+    # savefig("./plots/KdenX.jpg")
 
-    fig2 = title("Kernel density of Work Probit Input")
-    savefig("./plots/KdenX.jpg")
 
+    # k_y = kde(log(df[:Y][df[:A].== 1]))
+    # fig3 = figure()
+    # fig3 = plot(k_y)
+    # fig3 = title("Kernel density of Log(Non-Labor Income)")
+    # savefig("./plots/Yden_normal.jpg")
 
-    k_y = kde(log(df[:Y][df[:A].== 1]))
-    fig3 = 0
-    fig3 = figure
-    fig3 = plot(k_y)
-    fig3 = title("Kernel density of Log(Non-Labor Income)")
-    savefig("./plots/Yden_normal.jpg")
+    # fig4 = figure()
+    # fig4 = plot([1:A],perc_a)
+    # fig4 = xlabel("Periods")
+    # fig4 = ylabel("Perc Working")
+    # fig4 = title("Percentage of people working in every period")
+    # savefig("./plots/perc_working.jpg")    
 
 
     for tt in A:-1:1  # for every period, starting at A and working backward
