@@ -49,7 +49,7 @@
 % ------------------------------------------------------
 
 \title{\textbf{Homework 8} \\ Labor Economics}
-\author{Mark Agerton and {\color{cyan} Nick Frazier} }
+\author{Mark Agerton and  Nick Frazier}
 \date{Due Mon, April 13}
 
 % ------------------------------------------------------
@@ -98,7 +98,7 @@ Objective is
 
 Write problem recursively for lazy:
 \[
-V_a^0(x,y,\epsilon_a) = \gamma_1 + (1+\gamma_2)y + \beta E[V_{a+1}( {\color{cyan} x+1},y,\epsilon_{a+1})]
+V_a^0(x,y,\epsilon_a) = \gamma_1 + (1+\gamma_2)y + \beta E[V_{a+1}( cyan x+1,y,\epsilon_{a+1})]
 \]
 and working:
 \[
@@ -129,7 +129,7 @@ Then
 
 Last period's value is
 \[
-V_A(x,y,\epsilon_A) = \max \{ \gamma_1 + \gamma_2 y, \quad \exp(\alpha_1 + \alpha_2 x + \epsilon_A) \} \mathcolor{red}{+ y}
+V_A(x,y,\epsilon_A) = \max \{ \gamma_1 + \gamma_2 y, \quad \exp(\alpha_1 + \alpha_2 x + \epsilon_A) \}{+ y}
 \]
 Now
 \[
@@ -141,17 +141,17 @@ so
 \]
 Expected terminal value is
 \begin{multline*}
-E[V_A(x,y)] = \mathcolor{red}{y +}
+E[V_A(x,y)] = {y +}
     [1-\pi(x,y,A)]\left(\gamma_1 + \gamma_2 y\right)  + \\
-    \pi(x,y,A)    \left[\mathcolor{red}{\exp\{\alpha_1 + \alpha_2 x\}} \underbrace{
+    \pi(x,y,A)    \left[{\exp\{\alpha_1 + \alpha_2 x\}} \underbrace{
     \frac{ 1-\Phi\left( \frac{g(x,y,A) - \sigma_\epsilon^2}{\sigma_\epsilon} \right)}
     {\pi(x,y,A)} \exp\{\frac{1}{2}\sigma^2_\epsilon\} }_{E[e^\epsilon_A|\mathcal W^A]} \right]
 \end{multline*}
 This can be written as
 \[
-E[V_A(x,y)] = \mathcolor{red}{y} + 
+E[V_A(x,y)] = {y} + 
     [1-\pi(x,y,A)]\left[\gamma_1 + \gamma_2 y\right]  + 
-    \mathcolor{red}{ \exp\left\{\alpha_1 + \alpha_2 x + \frac{\sigma_\epsilon^2}{2}\right\}}
+    { \exp\left\{\alpha_1 + \alpha_2 x + \frac{\sigma_\epsilon^2}{2}\right\}}
     \left[1-\Phi\left( \frac{g(x,y,A) - \sigma_\epsilon^2}{\sigma_\epsilon} \right)\right] 
 \]
 
@@ -171,9 +171,9 @@ so
 and
 \begin{align*}
 E[V_a(x,y)] 
-&= \mathcolor{red}{y}  
+&= {y}  
 + [1-\pi(x,y,a)]\left\{\gamma_1 + \gamma_2 y + E[V_{a+1}(x,y)] \right\}  \\ 
-&+ \pi(x,y,a)E[V_{a+1}(x+1,y)] + \mathcolor{red}{ \exp\left\{\alpha_1 + \alpha_2 x + \frac{\sigma_\epsilon^2}{2}\right\}}
+&+ \pi(x,y,a)E[V_{a+1}(x+1,y)] + { \exp\left\{\alpha_1 + \alpha_2 x + \frac{\sigma_\epsilon^2}{2}\right\}}
     \left[1-\Phi\left( \frac{g(x,y,a) - \sigma_\epsilon^2}{\sigma_\epsilon} \right)\right] 
 \end{align*}
 Note that we could simply use the general definition for $V_a$ and $g(x,y,a)$ and specify $V_{A+1} = 0$. This would be a bit neater (ie, for each agent, have $A+1$ periods and just say $V_{A+1} = 0$... then start recursion at $a=A$.  
@@ -194,38 +194,63 @@ V_a^0(x,y) \quad V_a^1(x,y) \quad g(x,y,a) \quad \pi(x,y,a) \quad w(x,\epsilon; 
 \]
 Note that $g(x,y,a)$ is a function of $a$ because it has $\Delta E[V_{a+1}(x,y)]$
 
+\subsection{Identification}
+
+All parameters are identified through non-linearity in Probit except $\sigma_v$ which is never identified.
+
 \subsection{Plan}
 \begin{enumerate}
-    \item Given $\theta$, calculate functions {\color{cyan} I think we are just starting at $t=A$ here and so $\Delta E[V_{a+1}(x,y)] = 0$ and we do not need to fix a $\theta$. Can recover $g$ without.}
-    \item Run probit for working in $A$
+		\item We use the fact that in period $A$ we have $\Delta E[V_{A+1}(x,y)] = 0.0 \ \forall x$
+    \item Run probit for working in $A$. Recover all structural parameters.
     \item Estimate wages as 
     \[
         \log w = \underbrace{\alpha_1 + \alpha_2 x + \sigma_\epsilon \lambda(y,x,a)}_{E[\log w_a^* | \mathcal W_a]} + \nu
     \] 
     where
     \[
-        \lambda(x,y,a) = E\left[\frac{\epsilon}{\sigma} \middle | \frac{\epsilon}{\sigma} \underbrace{\geq}_{\text{notes were } \leq} \frac{g(x,y,a)}{\sigma_\epsilon}\right]
+        \sigma \lambda(x,y,a) = \sigma E\left[\frac{\epsilon}{\sigma} \middle | \frac{\epsilon}{\sigma} \geq \frac{g(x,y,a)}{\sigma_\epsilon}\right]
         = \frac{\phi(g/\sigma)}{1- \Phi(g/\sigma)}
     \]
-    \item Compute $\Delta E[V_A(x,y)]$
-    \item Run probit for $A-1$...
+    \item Compute $E[V_{A}(x,y)]$ and $E[V_{A}(x+1,y)]$ for all relevant $x$ given observed work history for person $i$ at $A-1$.
+    \item Use $\Delta E[V_{A}(x,y)]$ to repeat procedure from Step 2.
 \end{enumerate}
+
+Each period you get a set of estimates of the structural parameters from the probit and a second set of estimates for wage function parameters and $\sigma_\varepsilon$. So you have $A$ sets of \[ \widehat \theta_{MLE} = \left\{\widehat\gamma_1, \ \widehat\gamma_2, \ \widehat\alpha_1, \ \widehat\alpha_2, \ \widehat\alpha_3, \ \widehat\sigma_e \right\}\] and $A$ sets of \[\widehat\beta_{OLS} = \{ \widehat\alpha_1, \ \widehat\alpha_2, \ \widehat\alpha_3, \ \widehat\sigma_e \}\]
 
 \section{Results}
 
-\lstinputlisting[frame=single, caption=Functions used]{../code/parameterization_keep.jl} \\
+First ran the model with $N = 10,000$ for 25 periods to get a sense of how long things took.
+		{
+		\centering
+		\includegraphics[width=.9\textwidth]{time_taken_keep.jpg} \\
+		}
+Then we upped $N=35,000$ and ran for 11 periods to get more percision on our estimates. It took 62 minutes to run through all periods starting at $A=11$, then $A=10$, to $A=1$. Estiamtes provided below. First a bit of background about our economy.
+
+\lstinputlisting[frame=single, caption=Functions used]{../code/parameterization_keep.jl} 
 
 
 		{
-		\vspace{-1.5cm}
 		\centering
-		\includegraphics[width=\textwidth]{time_taken_keep.jpg} \\
+		\subsection{Non-labor income}
+		\includegraphics[height=10cm,width=.9\textwidth]{Yden_normal_keep.jpg} \\
+		\subsection{Wage Income at Period 11}
+		\includegraphics[height=10cm,width=.9\textwidth]{logWages_normal_keep.jpg} \\
+		\subsection{Percentage working every period}
+		\includegraphics[height=10cm,width=.9\textwidth]{perc_working_keep.jpg} \\
+		\subsection{Input in the Probit for decision to work}
+		\includegraphics[height=10cm,width=.9\textwidth]{KdenX_keep.jpg}
 		}
 
 \subsection{Sample Output}
 
 \lstinputlisting[frame=single, caption=Functions used]{../code/output_keep.jl}
 
+\subsection{Main Code}
+\lstinputlisting[frame=single, caption=Functions used]{../code/dgp.jl}
+\subsection{Functions}
+\lstinputlisting[frame=single, caption=Functions used]{../code/functions.jl}
+\subsection{Probit Functions}
+\lstinputlisting[frame=single, caption=Functions used]{../code/functions_probit.jl}
 
 
 \end{document}

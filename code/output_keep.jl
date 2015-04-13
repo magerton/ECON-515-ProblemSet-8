@@ -422,25 +422,6 @@ It took 3731.773 seconds to run
 α_3 	 -0.1 	 0.001
 
 σ_e 	 1.0 	 1.023
-NumPeriods: Time Taken:
-1 		 0.0
-NumPeriods: Time Taken:
-2 		 0.0
-NumPeriods: Time Taken:
-3 		 0.0
-NumPeriods: Time Taken:
-4 		 0.0
-NumPeriods: Time Taken:
-5 		 0.0
-NumPeriods: Time Taken:
-6 		 0.0
-NumPeriods: Time Taken:
-7 		 0.0
-NumPeriods: Time Taken:
-8 		 0.0
-NumPeriods: Time Taken:
-9 		 0.0
-NumPeriods: Time Taken:
-10 		 0.0
+
 NumPeriods: Time Taken:
 11 		 3731.772961383
