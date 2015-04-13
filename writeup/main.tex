@@ -1,14 +1,18 @@
 \documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
-%\usepackage{fontspec}
+\usepackage{fontspec}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
+\usepackage{pgffor}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{subcaption}
 \usepackage{bbm}
 \usepackage{lscape}
-\usepackage{color}
+\usepackage{ulem}
 \usepackage{cancel}
-
 % ------------------------------------------------------
 
 \DeclareMathOperator*{\argmin}{arg\,min}
@@ -22,9 +26,9 @@
 
 % ------------------------------------------------------
  
-%\usepackage{fontspec}
-%\input{./julia-listing.tex}
-%\setmonofont{Consolas}
+\usepackage{fontspec}
+\input{./julia-listing.tex}
+\setmonofont{Consolas}
 
 
 \newcommand*{\mathcolor}{}
@@ -206,5 +210,22 @@ Note that $g(x,y,a)$ is a function of $a$ because it has $\Delta E[V_{a+1}(x,y)]
     \item Compute $\Delta E[V_A(x,y)]$
     \item Run probit for $A-1$...
 \end{enumerate}
+
+\section{Results}
+
+\lstinputlisting[frame=single, caption=Functions used]{../code/parameterization_keep.jl} \\
+
+
+		{
+		\vspace{-1.5cm}
+		\centering
+		\includegraphics[width=\textwidth]{time_taken_keep.jpg} \\
+		}
+
+\subsection{Sample Output}
+
+\lstinputlisting[frame=single, caption=Functions used]{../code/output_keep.jl}
+
+
 
 \end{document}
