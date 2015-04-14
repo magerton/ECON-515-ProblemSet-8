@@ -134,7 +134,7 @@ function EV_hat(
         ( 1 - normcdf( (E_g_fun(θ,X_a,tt) - σ_e^2)/σ_e ) )    
 
     # EV if working in a
-    Π = 1 - normcdf( E_g_fun(θ,X_a,tt)./σ_e )
+    Π = 1 - normcdf( E_g_fun(θ,X_a_p1,tt)./σ_e )
     (DATA[EV_a_x1])[DATA[:A].==tt] = 
         (1-Π).*( leisure_value_t(θ,tt) 
         + β*DATA[EV_a1_x][DATA[:A].==tt] )

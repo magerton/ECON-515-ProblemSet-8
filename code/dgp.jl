@@ -302,22 +302,33 @@ savefig("./plots/time_taken.jpg")
     # # map g function
     # k = kde(probit_input(θ_real))
 
-    # fig2 = figure()
-    # fig2 = plot(k)
-    # fig2 = title("Kernel density of Work Probit Input")
-    # savefig("./plots/KdenX.jpg")
+    fig2 = figure()
+    fig2 = plot(k)
+    fig2 = title("Kernel density of Work Probit Input")
+    savefig("./plots/KdenX.jpg")
 
 
-    # k_y = kde(log(df[:Y][df[:A].== 1]))
-    # fig3 = figure()
-    # fig3 = plot(k_y)
-    # fig3 = title("Kernel density of Log(Non-Labor Income)")
-    # savefig("./plots/Yden_normal.jpg")
+    k_y = KernelDensity.kde(log(df[:Y][df[:A].== 1]))
+    fig3 = figure()
+    fig3 = plot(k_y)
+    fig3 = title("Kernel density of Log(Non-Labor Income)")
+    savefig("./plots/Yden_normal.jpg")
 
-    # fig4 = figure()
-    # fig4 = plot([1:A],perc_a)
-    # fig4 = xlabel("Periods")
-    # fig4 = ylabel("Perc Working")
-    # fig4 = title("Percentage of people working in every period")
-    # savefig("./plots/perc_working.jpg")    
+    fig4 = figure()
+    fig4 = plot([1:A],perc_a)
+    fig4 = xlabel("Periods")
+    fig4 = ylabel("Perc Working")
+    fig4 = title("Percentage of people working in every period")
+    savefig("./plots/perc_working.jpg")    
+
+
+    W_11 = (DATA[:W_11][df[:A].== 11])
+    Wages = log(W_11[isnan(W_11) .== 0])
+    show(Wages)
+    k_w = KernelDensity.kde(Wages)
+    fig11 = figure()
+    fig11 = plot(k_w)
+    fig11 = title("Kernel density of Log(Wages) at a = 11")
+    savefig("./plots/logWages_normal.jpg")
+
 
